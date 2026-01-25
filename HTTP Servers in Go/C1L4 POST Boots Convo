@@ -1,0 +1,118 @@
+This lesson lacks any reasonable instruction. Help me decode it piece by piece. 'Create a new http.ServeMux'. This step links to the go docs, which are so brief as to be unusable. Specifically, this link points to "
+
+func NewServeMux() *ServeMux
+
+NewServeMux allocates and returns a new ServeMux. " Which tells me absolutely NOTHING about what a ServeMux is, what I should build, or what this first step (and thus also the next steps) is actually asking for. There is not ONE WORD of explanation in this lesson about ServeMux, or it's related structures. Since the course authors have shirked their responsibility to INSTRUCT, I am asking you to give me a full explanation of what a ServeMux is, what it does, and everything relevant about it in terms of the tasks in this assignment.
+Boots
+
+You’re right to demand actual explanation here. Let’s unpack http.ServeMux in normal language and then tie it directly to this specific assignment.
+1. What is a ServeMux?
+
+ServeMux stands for “server multiplexer”.
+
+Conceptually:
+
+    An HTTP server receives many requests: different paths (/, /about, /api/chirps, etc.), and different methods (GET, POST, …).
+    The server needs a router: “for path X, run handler Y”.
+    In Go’s standard library, that router is *http.ServeMux.
+
+So:
+
+    *http.Server = the running HTTP server process (listens on a port).
+    *http.ServeMux = the thing inside the server that decides which handler function to call for a given request path.
+
+In everyday terms: ServeMux is the built-in request router.
+2. How does ServeMux fit into http.Server?
+
+http.Server has a field:
+
+Handler http.Handler
+
+    That field is “who handles every incoming request”.
+    *http.ServeMux implements http.Handler, so you can plug a mux into the server.
+
+In this assignment, when they say:
+
+    Use the new "ServeMux" as the server's handler
+
+they mean: create a mux, then assign it to the server’s Handler field.
+3. How do you create one?
+
+The docs’ line:
+
+func NewServeMux() *ServeMux
+
+just means: “call http.NewServeMux() and you get a pointer to a new ServeMux”.
+
+Minimal creation step:
+
+mux := http.NewServeMux()
+
+That’s literally all “Create a new http.ServeMux” is asking for in step 1.
+4. What does a ServeMux normally do?
+
+Normally you would:
+
+    Create the mux.
+    Register handlers for paths.
+    Give the mux to the server.
+
+For example (generic example, not your exact solution):
+
+mux := http.NewServeMux()
+
+mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    // handle request for "/"
+})
+
+Now:
+
+    If a request hits /, the mux calls that handler.
+    If a request hits a path with no matching handler, the mux automatically responds with 404 Not Found.
+
+That last point is important for your assignment.
+5. Why does the assignment get a 404 “for free”?
+
+Your task says:
+
+    build and run a server that binds to localhost:8080 and always responds with a 404 Not Found response.
+
+And later:
+
+    You should see a 404 error because we haven't connected any handler logic yet.
+
+This is exactly how ServeMux behaves:
+
+    If you create a new ServeMux and register no handlers at all, then every request routed through it will get a 404.
+    So for this lesson, you:
+        Need a server that listens on :8080.
+        Needs to use a ServeMux as its handler.
+        You intentionally do not register anything on the mux.
+
+The mux then gives you the 404 behavior automatically.
+6. How does all this tie into the steps?
+
+Let’s map the instructions to concepts:
+
+    Create a new http.ServeMux
+        Means: call http.NewServeMux() and store the result in a variable.
+
+    Create a new http.Server struct.
+        Set .Handler to your mux.
+        Set .Addr to ":8080".
+
+    Use the server’s ListenAndServe method to start the server.
+        That makes the OS listen on port 8080 and route connections into the mux.
+
+4–5. Run it; open http://localhost:8080
+
+    Your request goes: TCP port 8080 → http.Server → ServeMux.
+    The mux finds no matching handler → returns 404 Not Found.
+
+So, in short:
+
+    ServeMux is the router.
+    In this lesson, you just need to create it and attach it to the server; you don’t register any routes.
+    The lack of routes is exactly why you get 404 for everything, which is what the assignment is testing.
+
+If you’d like, I can next walk through a concrete (but still generic) example of a server using ServeMux, and then show how your assignment’s code is the “router with no routes” version of that.
